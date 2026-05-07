@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataMining Pro — Advanced Data Science and Graph Toolkit</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.8.3/simple-statistics.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        :root {
+            --radius: 12px; 
+            --radius-sm: 8px; 
+            --radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Inter', sans-serif; 
+            --font-mono: 'JetBrains Mono', monospace;
+            --sidebar-width: 340px; 
+            --topbar-height: 64px;
+        }
+
+        .theme-dark {
+            --bg-primary: #06060e; 
+            --bg-secondary: #0c0c1d; 
+            --bg-card: rgba(16, 16, 36, 0.85);
+            --bg-card-solid: #10102a; 
+            --bg-hover: rgba(124, 58, 237, 0.08); 
+            --bg-input: rgba(12, 12, 30, 0.9);
+            --accent: #7c3aed; 
+            --accent-light: #a78bfa; 
+            --cyan: #06b6d4; 
+            --text-primary: #f1f5f9; 
+            --text-secondary: #94a3b8;
+            --border: rgba(124, 58, 237, 0.15); 
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --success: #10b981; 
+            --warning: #f59e0b; 
+            --error: #ef4444;
+        }
+
+        .theme-light {
+            --bg-primary: #f8fafc; 
+            --bg-secondary: #ffffff; 
+            --bg-card: #ffffff;
+            --bg-card-solid: #f1f5f9; 
+            --bg-hover: rgba(124, 58, 237, 0.05); 
+            --bg-input: #ffffff;
+            --accent: #4f46e5; 
+            --accent-light: #6366f1; 
+            --cyan: #0891b2;
+            --text-primary: #1e293b; 
+            --text-secondary: #475569;
+            --border: rgba(0, 0, 0, 0.08); 
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --success: #059669; 
+            --warning: #d97706; 
+            --error: #dc2626;
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: var(--font); 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            overflow: hidden; 
+            height: 100vh; 
+            transition: background 0.3s ease; 
+        }
+        
+        .app-container { 
+            display: flex; 
+            height: 100vh; 
+            width: 100vw; 
+        }
+        
+        .chat-sidebar { 
+            width: var(--sidebar-width); 
+            background: var(--bg-secondary); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            transition: var(--transition); 
+            z-index: 100; 
+        }
+        
+        .chat-sidebar.collapsed { 
+            width: 0; 
+            overflow: hidden; 
+            border: none; 
+        }
+        
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px; 
+            border-bottom: 1px solid var(--border); 
+        }
+        
+        .ai-orb { 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 8px; 
+            background: linear-gradient(135deg, var(--accent), var(--cyan)); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            animation: pulse 2s infinite; 
+        }
+        
+        @keyframes pulse { 
+            0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); } 
+            50% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); } 
+        }
+        
+        .ai-insights { 
+            padding: 20px; 
+            overflow-y: auto; 
+            flex: 1; 
+        }
+        
+        .insight-card { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-sm); 
+            padding: 12px; 
+            margin-bottom: 10px; 
+            font-size: 13px; 
+        }
+        
+        .insight-card h4 { 
+            color: var(--accent-light); 
+            margin-bottom: 6px; 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .insight-card p { 
+            color: var(--text-secondary); 
+            line-height: 1.5; 
+        }
+
+        .main-content { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            min-width: 0; 
+        }
+        
+        .top-bar { 
+            height: var(--topbar-height); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 0 20px; 
+            background: var(--bg-secondary); 
+            border-bottom: 1px solid var(--border); 
+        }
+        
+        .command-palette { 
+            position: fixed; 
+            top: 20%; 
+            left: 50%; 
+            transform: translateX(-50%) scale(0.95); 
+            width: 600px; 
+            max-width: 90vw; 
+            background: var(--bg-card-solid); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow); 
+            z-index: 10000; 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.2s; 
+        }
+        
+        .command-palette.active { 
+            opacity: 1; 
+            visibility: visible; 
+            transform: translateX(-50%) scale(1); 
+        }
+        
+        .command-input { 
+            width: 100%; 
+            padding: 16px 20px; 
+            border: none; 
+            border-bottom: 1px solid var(--border); 
+            background: transparent; 
+            color: var(--text-primary); 
+            font-size: 16px; 
+            outline: none; 
+        }
+        
+        .command-list { 
+            max-height: 400px; 
+            overflow-y: auto; 
+            padding: 8px; 
+        }
+        
+        .command-item { 
+            padding: 12px 16px; 
+            border-radius: var(--radius-sm); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            transition: 0.2s; 
+        }
+        
+        .command-item:hover, .command-item.selected { 
+            background: var(--bg-hover); 
+        }
+        
+        .command-item i { 
+            color: var(--accent); 
+            width: 20px; 
+        }
+        
+        .command-item span { 
+            flex: 1; 
+        }
+        
+        .command-item kbd { 
+            font-family: var(--font-mono); 
+            font-size: 11px; 
+            background: var(--bg-primary); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            color: var(--text-secondary); 
+        }
+
+        .toolbar { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            padding: 10px 20px; 
+            background: var(--bg-secondary); 
+            border-bottom: 1px solid var(--border); 
+            overflow-x: auto; 
+        }
+        
+        .tool-btn { 
+            padding: 8px 14px; 
+            cursor: pointer; 
+            border-radius: var(--radius-sm); 
+            color: var(--text-primary); 
+            background: var(--bg-primary); 
+            border: 1px solid var(--border); 
+            font-size: 13px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            white-space: nowrap; 
+            transition: 0.2s; 
+        }
+        
+        .tool-btn:hover { 
+            border-color: var(--accent); 
+            background: var(--bg-hover); 
+        }
+        
+        .tool-btn.primary { 
+            background: var(--accent); 
+            border-color: var(--accent); 
+            color: white; 
+        }
+        
+        .tool-btn.primary:hover { 
+            background: var(--accent-light); 
+        }
+        
+        select { 
+            padding: 8px; 
+            border-radius: var(--radius-sm); 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            border: 1px solid var(--border); 
+            outline: none; 
+        }
+        
+        .history-controls { 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            margin-left: auto; 
+        }
+
+        .panels { 
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            overflow: hidden; 
+            background: var(--border); 
+            gap: 1px; 
+        }
+        
+        .panel { 
+            display: flex; 
+            flex-direction: column; 
+            background: var(--bg-primary); 
+            overflow: hidden; 
+        }
+        
+        .table-controls { 
+            padding: 10px; 
+            border-bottom: 1px solid var(--border); 
+            background: var(--bg-secondary); 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+        }
+        
+        .search-input { 
+            flex: 1; 
+            padding: 8px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border); 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+        }
+        
+        .table-container { 
+            flex: 1; 
+            overflow: auto; 
+            position: relative; 
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 12px; 
+        }
+        
+        th { 
+            position: sticky; 
+            top: 0; 
+            background: var(--bg-secondary); 
+            padding: 12px; 
+            text-align: left; 
+            border-bottom: 2px solid var(--border); 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            user-select: none; 
+        }
+        
+        th:hover { background: var(--bg-hover); }
+        th .sort-icon { margin-left: 5px; opacity: 0.5; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); font-family: var(--font-mono); }
+        tr:hover td { background: var(--bg-hover); }
+        
+        .type-icon { font-size: 10px; margin-right: 5px; opacity: 0.6; }
+        .type-number { color: var(--cyan); }
+        .type-string { color: var(--accent-light); }
+        .type-date { color: var(--success); }
+
+
+        .notebook-body { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        
+        .nb-cell-card { 
+            background: var(--bg-secondary); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius); 
+            overflow: hidden; 
+            box-shadow: var(--shadow); 
+            position: relative; 
+        }
+        
+        .nb-cell-header { 
+            padding: 8px 16px; 
+            background: rgba(0,0,0,0.05); 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-size: 11px; 
+            color: var(--text-secondary); 
+        }
+        
+        .nb-cell-actions { display: flex; gap: 8px; }
+        
+        .nb-cell-btn { 
+            background: transparent; 
+            border: none; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            padding: 4px; 
+            border-radius: 4px; 
+        }
+        
+        .nb-cell-btn:hover { 
+            background: var(--bg-hover); 
+            color: var(--text-primary); 
+        }
+        
+        .nb-chart-area { 
+            width: 100%; 
+            min-height: 350px; 
+            background: transparent; 
+        }
+        
+        .nb-metrics { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+            gap: 10px; 
+            padding: 15px; 
+            background: var(--bg-primary); 
+        }
+        
+        .metric-box { 
+            text-align: center; 
+            padding: 10px; 
+            border-radius: var(--radius-sm); 
+            background: var(--bg-card); 
+        }
+        
+        .metric-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+        .metric-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+
+        .upload-section { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 40px; 
+        }
+        
+        .dropzone { 
+            width: 100%; 
+            max-width: 500px; 
+            padding: 60px; 
+            border: 2px dashed var(--border); 
+            border-radius: var(--radius-lg); 
+            text-align: center; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            position: relative; 
+        }
+        
+        .dropzone:hover, .dropzone.dragover { 
+            border-color: var(--accent); 
+            background: var(--bg-hover); 
+        }
+        
+        .dropzone-icon { font-size: 48px; color: var(--accent); margin-bottom: 20px; }
+        
+        .sample-datasets { 
+            margin-top: 30px; 
+            display: flex; 
+            gap: 10px; 
+            justify-content: center; 
+            flex-wrap: wrap; 
+        }
+        
+        .sample-btn { 
+            padding: 8px 16px; 
+            border: 1px solid var(--border); 
+            background: var(--bg-card); 
+            border-radius: var(--radius-sm); 
+            cursor: pointer; 
+            font-size: 12px; 
+            transition: 0.2s; 
+        }
+        
+        .sample-btn:hover { 
+            border-color: var(--accent); 
+            background: var(--bg-hover); 
+        }
+
+
+        .loading-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.8); 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 99999; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        
+        .spinner { 
+            width: 50px; 
+            height: 50px; 
+            border: 4px solid rgba(255,255,255,0.1); 
+            border-top-color: var(--accent); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-text { color: white; font-size: 14px; }
+        
+        .toast-container { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 10001; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+        
+        .toast { 
+            background: var(--bg-card-solid); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-sm); 
+            padding: 16px 20px; 
+            box-shadow: var(--shadow); 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            animation: slideIn 0.3s ease; 
+            min-width: 300px; 
+        }
+        
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } }
+        
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--error); }
+        .toast.warning { border-left: 3px solid var(--warning); }
+
+        .modal-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.7); 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999; 
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal { 
+            background: var(--bg-card-solid); 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-lg); 
+            width: 90%; 
+            max-width: 600px; 
+            max-height: 80vh; 
+            overflow: hidden; 
+        }
+        
+        .modal-header { 
+            padding: 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .modal-body { padding: 20px; overflow-y: auto; max-height: 60vh; }
+        
+        .modal-footer { 
+            padding: 15px 20px; 
+            border-top: 1px solid var(--border); 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 10px; 
+        }
+
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .config-item { display: flex; flex-direction: column; gap: 5px; }
+        .config-item label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .config-item input, .config-item select { padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); }
+
+        .shortcuts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .shortcut-item { display: flex; justify-content: space-between; padding: 8px; background: var(--bg-primary); border-radius: var(--radius-sm); }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .panels { grid-template-columns: 1fr; }
+            .chat-sidebar { position: absolute; height: 100%; }
+            .toolbar { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="command-palette" id="commandPalette">
+        <input type="text" class="command-input" id="commandInput" placeholder="Type a command or search...">
+        <div class="command-list" id="commandList"></div>
+    </div>
+
+    <div class="modal-overlay" id="mlModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Train AI Model</h3>
+                <button class="tool-btn" onclick="closeModal('mlModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Algorithm</label>
+                        <select id="mlAlgorithm">
+                            <option value="linear">Linear Regression</option>
+                            <option value="polynomial">Polynomial Regression</option>
+                            <option value="decision-tree">Decision Tree</option>
+                            <option value="kmeans">K-Means Clustering</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Polynomial Degree</label>
+                        <input type="number" id="polyDegree" value="2" min="2" max="5">
+                    </div>
+                    <div class="config-item">
+                        <label>Epochs</label>
+                        <input type="number" id="mlEpochs" value="50" min="10" max="500">
+                    </div>
+                    <div class="config-item">
+                        <label>Learning Rate</label>
+                        <input type="number" id="mlLearningRate" value="0.01" step="0.001" min="0.0001" max="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label>Train/Test Split</label>
+                        <input type="number" id="trainSplit" value="0.8" step="0.1" min="0.5" max="0.9">
+                    </div>
+                    <div class="config-item" id="kmeansClusters" style="display:none;">
+                        <label>Clusters (K)</label>
+                        <input type="number" id="kClusters" value="3" min="2" max="10">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="tool-btn" onclick="closeModal('mlModal')">Cancel</button>
+                <button class="tool-btn primary" onclick="runAdvancedML()"><i class="fas fa-play"></i> Train Model</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="transformModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Clean & Transform</h3>
+                <button class="tool-btn" onclick="closeModal('transformModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Transform Operation</label>
+                        <select id="transformType">
+                            <option value="normalize">Normalize (0-1)</option>
+                            <option value="standardize">Standardize (Z-Score)</option>
+                            <option value="log">Log Transform</option>
+                            <option value="sqrt">Square Root</option>
+                            <option value="outlier-iqr">Remove Outliers (IQR)</option>
+                            <option value="outlier-zscore">Remove Outliers (Z-Score)</option>
+                            <option value="fill-mean">Fill Missing (Mean)</option>
+                            <option value="fill-median">Fill Missing (Median)</option>
+                            <option value="fill-forward">Fill Missing (Forward)</option>
+                            <option value="onehot">One-Hot Encode</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Target Column</label>
+                        <select id="transformColumn"><option value="">Select column...</option></select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="tool-btn" onclick="closeModal('transformModal')">Cancel</button>
+                <button class="tool-btn primary" onclick="applyTransformation()"><i class="fas fa-magic"></i> Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shortcutsModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Keyboard Shortcuts</h3>
+                <button class="tool-btn" onclick="closeModal('shortcutsModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="shortcuts-grid">
+                    <div class="shortcut-item"><span>Command Palette</span><kbd>Ctrl+Shift+P</kbd></div>
+                    <div class="shortcut-item"><span>Undo</span><kbd>Ctrl+Z</kbd></div>
+                    <div class="shortcut-item"><span>Redo</span><kbd>Ctrl+Y</kbd></div>
+                    <div class="shortcut-item"><span>New Dataset</span><kbd>Ctrl+N</kbd></div>
+                    <div class="shortcut-item"><span>Search Table</span><kbd>Ctrl+F</kbd></div>
+                    <div class="shortcut-item"><span>Export PDF</span><kbd>Ctrl+E</kbd></div>
+                    <div class="shortcut-item"><span>Toggle Theme</span><kbd>Ctrl+T</kbd></div>
+                    <div class="shortcut-item"><span>Run Profile</span><kbd>Ctrl+R</kbd></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+
+    <div class="app-container">
+        
+        <aside class="chat-sidebar" id="chatSidebar">
+            <div class="sidebar-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="ai-orb"><i class="fas fa-robot"></i></div>
+                    <span style="font-weight:700;">AI Assistant</span>
+                </div>
+                <button class="tool-btn" id="collapseSidebar"><i class="fas fa-chevron-left"></i></button>
+            </div>
+            <div class="ai-insights" id="aiInsights">
+                <div class="insight-card">
+                    <h4><i class="fas fa-hand-sparkles"></i> Hello there!</h4>
+                    <p>I'm ready when you are. Upload a dataset or try a sample to start visualizing your data.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-bar">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <button class="tool-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+                    <h2 style="font-size:18px; letter-spacing:-0.5px;">DataMining <span style="color:var(--accent);">AI Pro</span></h2>
+                    <div class="history-controls" id="historyControls" style="display:none;">
+                        <button class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                        <button class="tool-btn" id="redoBtn" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                    </div>
+                </div>
+                <div id="dataSummary" style="display:none; align-items:center; gap:15px;">
+                    <span id="rowCount" style="font-size:12px; opacity:0.7;"></span>
+                    <button class="tool-btn" id="shortcutsBtn" title="Shortcuts"><i class="fas fa-keyboard"></i></button>
+                    <button class="tool-btn" id="newDatasetBtn" style="color:var(--accent);"><i class="fas fa-plus"></i> New File</button>
+                </div>
+            </header>
+
+            <section class="upload-section" id="uploadSection">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3>Drop your dataset here</h3>
+                    <p style="color:var(--text-secondary); margin-top:10px;">We support CSV, Excel, and JSON files.</p>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" hidden>
+                </div>
+            </section>
+
+            <section class="workspace" id="workspace" style="display:none; flex-direction:column; flex:1;">
+                
+                <div class="toolbar">
+                    <select id="xAxisSelect"><option value="">X-Axis</option></select>
+                    <select id="yAxisSelect"><option value="">Y-Axis</option></select>
+                    <select id="colorSelect"><option value="">Color (optional)</option></select>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" data-chart="bar"><i class="fas fa-chart-bar"></i> Bar</button>
+                    <button class="tool-btn" data-chart="line"><i class="fas fa-chart-line"></i> Line</button>
+                    <button class="tool-btn" data-chart="scatter"><i class="fas fa-braille"></i> Scatter</button>
+                    <button class="tool-btn" data-chart="box"><i class="fas fa-box"></i> Box</button>
+                    <button class="tool-btn" data-chart="histogram"><i class="fas fa-chart-area"></i> Hist</button>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" id="runAutoEDA"><i class="fas fa-magic"></i> Profile</button>
+                    <button class="tool-btn" id="corrBtn"><i class="fas fa-th"></i> Matrix</button>
+                    <button class="tool-btn" id="transformBtn"><i class="fas fa-cogs"></i> Transform</button>
+                    <button class="tool-btn" id="trainML"><i class="fas fa-brain"></i> Train AI</button>
+                    
+                    <button class="tool-btn" id="cleanData"><i class="fas fa-broom"></i> Clean</button>
+                    <button class="tool-btn" onclick="runSmartImputation()"><i class="fas fa-magic"></i> Auto-Fill</button>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" id="exportPdf"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    <button class="tool-btn" id="exportExcel"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="tool-btn" id="themeToggle"><i class="fas fa-palette"></i></button>
+                </div>
+                
+                <div class="panels">
+                    
+                    <div class="panel">
+                        <div class="table-controls">
+                            <input type="text" id="tableSearch" class="search-input" placeholder="Search data... (Ctrl+F)">
+                            <button class="tool-btn" id="clearSearch"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="table-container" id="tableContainer">
+                            <table id="dataTable">
+                                <thead id="dataTableHead"></thead>
+                                <tbody id="dataTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="notebook-body" id="notebookBody"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
