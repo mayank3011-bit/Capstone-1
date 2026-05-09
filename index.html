@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataMining Pro — Advanced Data Science and Graph Toolkit</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-statistics/7.8.3/simple-statistics.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="theme-dark">
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="command-palette" id="commandPalette">
+        <input type="text" class="command-input" id="commandInput" placeholder="Type a command or search...">
+        <div class="command-list" id="commandList"></div>
+    </div>
+
+    <div class="modal-overlay" id="mlModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Train AI Model</h3>
+                <button class="tool-btn" onclick="closeModal('mlModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Algorithm</label>
+                        <select id="mlAlgorithm">
+                            <option value="linear">Linear Regression</option>
+                            <option value="polynomial">Polynomial Regression</option>
+                            <option value="decision-tree">Decision Tree</option>
+                            <option value="kmeans">K-Means Clustering</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Polynomial Degree</label>
+                        <input type="number" id="polyDegree" value="2" min="2" max="5">
+                    </div>
+                    <div class="config-item">
+                        <label>Epochs</label>
+                        <input type="number" id="mlEpochs" value="50" min="10" max="500">
+                    </div>
+                    <div class="config-item">
+                        <label>Learning Rate</label>
+                        <input type="number" id="mlLearningRate" value="0.01" step="0.001" min="0.0001" max="0.1">
+                    </div>
+                    <div class="config-item">
+                        <label>Train/Test Split</label>
+                        <input type="number" id="trainSplit" value="0.8" step="0.1" min="0.5" max="0.9">
+                    </div>
+                    <div class="config-item" id="kmeansClusters" style="display:none;">
+                        <label>Clusters (K)</label>
+                        <input type="number" id="kClusters" value="3" min="2" max="10">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="tool-btn" onclick="closeModal('mlModal')">Cancel</button>
+                <button class="tool-btn primary" onclick="runAdvancedML()"><i class="fas fa-play"></i> Train Model</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="transformModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Clean & Transform</h3>
+                <button class="tool-btn" onclick="closeModal('transformModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label>Transform Operation</label>
+                        <select id="transformType">
+                            <option value="normalize">Normalize (0-1)</option>
+                            <option value="standardize">Standardize (Z-Score)</option>
+                            <option value="log">Log Transform</option>
+                            <option value="sqrt">Square Root</option>
+                            <option value="outlier-iqr">Remove Outliers (IQR)</option>
+                            <option value="outlier-zscore">Remove Outliers (Z-Score)</option>
+                            <option value="fill-mean">Fill Missing (Mean)</option>
+                            <option value="fill-median">Fill Missing (Median)</option>
+                            <option value="fill-forward">Fill Missing (Forward)</option>
+                            <option value="onehot">One-Hot Encode</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label>Target Column</label>
+                        <select id="transformColumn"><option value="">Select column...</option></select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="tool-btn" onclick="closeModal('transformModal')">Cancel</button>
+                <button class="tool-btn primary" onclick="applyTransformation()"><i class="fas fa-magic"></i> Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shortcutsModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Keyboard Shortcuts</h3>
+                <button class="tool-btn" onclick="closeModal('shortcutsModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="shortcuts-grid">
+                    <div class="shortcut-item"><span>Command Palette</span><kbd>Ctrl+Shift+P</kbd></div>
+                    <div class="shortcut-item"><span>Undo</span><kbd>Ctrl+Z</kbd></div>
+                    <div class="shortcut-item"><span>Redo</span><kbd>Ctrl+Y</kbd></div>
+                    <div class="shortcut-item"><span>New Dataset</span><kbd>Ctrl+N</kbd></div>
+                    <div class="shortcut-item"><span>Search Table</span><kbd>Ctrl+F</kbd></div>
+                    <div class="shortcut-item"><span>Export PDF</span><kbd>Ctrl+E</kbd></div>
+                    <div class="shortcut-item"><span>Toggle Theme</span><kbd>Ctrl+T</kbd></div>
+                    <div class="shortcut-item"><span>Run Profile</span><kbd>Ctrl+R</kbd></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+    </div>
+
+    <div class="app-container">
+        
+        <aside class="chat-sidebar" id="chatSidebar">
+            <div class="sidebar-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="ai-orb"><i class="fas fa-robot"></i></div>
+                    <span style="font-weight:700;">AI Assistant</span>
+                </div>
+                <button class="tool-btn" id="collapseSidebar"><i class="fas fa-chevron-left"></i></button>
+            </div>
+            <div class="ai-insights" id="aiInsights">
+                <div class="insight-card">
+                    <h4><i class="fas fa-hand-sparkles"></i> Hello there!</h4>
+                    <p>I'm ready when you are. Upload a dataset or try a sample to start visualizing your data.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            
+            <header class="top-bar">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <button class="tool-btn" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+                    <h2 style="font-size:18px; letter-spacing:-0.5px;">DataMining <span style="color:var(--accent);">AI Pro</span></h2>
+                    <div class="history-controls" id="historyControls" style="display:none;">
+                        <button class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                        <button class="tool-btn" id="redoBtn" title="Redo (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                    </div>
+                </div>
+                <div id="dataSummary" style="display:none; align-items:center; gap:15px;">
+                    <span id="rowCount" style="font-size:12px; opacity:0.7;"></span>
+                    <button class="tool-btn" id="shortcutsBtn" title="Shortcuts"><i class="fas fa-keyboard"></i></button>
+                    <button class="tool-btn" id="newDatasetBtn" style="color:var(--accent);"><i class="fas fa-plus"></i> New File</button>
+                </div>
+            </header>
+
+            <section class="upload-section" id="uploadSection">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3>Drop your dataset here</h3>
+                    <p style="color:var(--text-secondary); margin-top:10px;">We support CSV, Excel, and JSON files.</p>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" hidden>
+                </div>
+            </section>
+
+            <section class="workspace" id="workspace" style="display:none; flex-direction:column; flex:1;">
+                
+                <div class="toolbar">
+                    <select id="xAxisSelect"><option value="">X-Axis</option></select>
+                    <select id="yAxisSelect"><option value="">Y-Axis</option></select>
+                    <select id="colorSelect"><option value="">Color (optional)</option></select>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" data-chart="bar"><i class="fas fa-chart-bar"></i> Bar</button>
+                    <button class="tool-btn" data-chart="line"><i class="fas fa-chart-line"></i> Line</button>
+                    <button class="tool-btn" data-chart="scatter"><i class="fas fa-braille"></i> Scatter</button>
+                    <button class="tool-btn" data-chart="box"><i class="fas fa-box"></i> Box</button>
+                    <button class="tool-btn" data-chart="histogram"><i class="fas fa-chart-area"></i> Hist</button>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" id="runAutoEDA"><i class="fas fa-magic"></i> Profile</button>
+                    <button class="tool-btn" id="corrBtn"><i class="fas fa-th"></i> Matrix</button>
+                    <button class="tool-btn" id="transformBtn"><i class="fas fa-cogs"></i> Transform</button>
+                    <button class="tool-btn" id="trainML"><i class="fas fa-brain"></i> Train AI</button>
+                    
+                    <button class="tool-btn" id="cleanData"><i class="fas fa-broom"></i> Clean</button>
+                    <button class="tool-btn" onclick="runSmartImputation()"><i class="fas fa-magic"></i> Auto-Fill</button>
+                    
+                    <div style="width:1px; height:24px; background:var(--border); margin:0 5px;"></div>
+                    
+                    <button class="tool-btn" id="exportPdf"><i class="fas fa-file-pdf"></i> Export PDF</button>
+                    <button class="tool-btn" id="exportExcel"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="tool-btn" id="themeToggle"><i class="fas fa-palette"></i></button>
+                </div>
+                
+                <div class="panels">
+                    
+                    <div class="panel">
+                        <div class="table-controls">
+                            <input type="text" id="tableSearch" class="search-input" placeholder="Search data... (Ctrl+F)">
+                            <button class="tool-btn" id="clearSearch"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="table-container" id="tableContainer">
+                            <table id="dataTable">
+                                <thead id="dataTableHead"></thead>
+                                <tbody id="dataTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="notebook-body" id="notebookBody"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
